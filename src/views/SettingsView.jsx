@@ -98,26 +98,32 @@ export function SettingsView({ cfg, setCfg, onResetData }) {
         ))}
       </Sec>
 
-      <Sec title="Fee Structure">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px 36px', gap: 9, marginBottom: 10 }}>
-          {['Education Level', 'Fee (RM / sem)', ''].map((h) => (
+      <Sec title="Fee Structure (Standards: RM 250 – 300 / month)">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px 36px', gap: 9, marginBottom: 10 }}>
+          {['Education Level', 'Fee (RM / sem)', 'Monthly Rate', ''].map((h) => (
             <div key={h} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '.06em' }}>
               {h}
             </div>
           ))}
         </div>
-        {f.fees.map((fe) => (
-          <div key={fe.id} style={{ display: 'grid', gridTemplateColumns: '1fr 150px 36px', gap: 9, marginBottom: 8, alignItems: 'center' }}>
-            <input value={fe.label} onChange={(e) => updFee(fe.id, 'label', e.target.value)} style={{ ...iBase }} />
-            <input type="number" value={fe.amount} onChange={(e) => updFee(fe.id, 'amount', Number(e.target.value))} style={{ ...iBase }} />
-            <button
-              onClick={() => delFee(fe.id)}
-              style={{ padding: 7, border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', background: 'white', lineHeight: 0 }}
-            >
-              <Trash2 size={13} color={T.red} />
-            </button>
-          </div>
-        ))}
+        {f.fees.map((fe) => {
+          const monthly = Math.round((Number(fe.amount || 0) / 6) * 100) / 100;
+          return (
+            <div key={fe.id} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px 36px', gap: 9, marginBottom: 8, alignItems: 'center' }}>
+              <input value={fe.label} onChange={(e) => updFee(fe.id, 'label', e.target.value)} style={{ ...iBase }} />
+              <input type="number" value={fe.amount} onChange={(e) => updFee(fe.id, 'amount', Number(e.target.value))} style={{ ...iBase }} />
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.sky, padding: '7px 8px', background: '#F0F9FF', borderRadius: 7, textAlign: 'center' }}>
+                RM {monthly}/mo
+              </div>
+              <button
+                onClick={() => delFee(fe.id)}
+                style={{ padding: 7, border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', background: 'white', lineHeight: 0 }}
+              >
+                <Trash2 size={13} color={T.red} />
+              </button>
+            </div>
+          );
+        })}
         <Btn sm v="outline" onClick={addFee}><Plus size={13} />Add Level</Btn>
       </Sec>
 

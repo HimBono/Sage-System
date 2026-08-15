@@ -11,12 +11,12 @@ export const INIT_CFG = {
     { sem: 2, year: 2026, start: '2026-07-01', end: '2026-12-12' },
   ],
   fees: [
-    { id: 1, label: 'Kg 1',    amount: 1000 },
-    { id: 2, label: 'Kg 2',    amount: 1000 },
-    { id: 3, label: 'Level 1', amount: 1200 },
-    { id: 4, label: 'Level 2', amount: 1300 },
-    { id: 5, label: 'Level 3', amount: 1400 },
-    { id: 6, label: 'Level 4', amount: 1500 },
+    { id: 1, label: 'Kg 1',    amount: 1500 }, // RM 250 / mo
+    { id: 2, label: 'Kg 2',    amount: 1560 }, // RM 260 / mo
+    { id: 3, label: 'Level 1', amount: 1620 }, // RM 270 / mo
+    { id: 4, label: 'Level 2', amount: 1680 }, // RM 280 / mo
+    { id: 5, label: 'Level 3', amount: 1740 }, // RM 290 / mo
+    { id: 6, label: 'Level 4', amount: 1800 }, // RM 300 / mo
   ],
   regForm: {
     title:        'APPLICATION FOR ADMISSION',
