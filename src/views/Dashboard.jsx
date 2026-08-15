@@ -68,20 +68,20 @@ export function Dashboard({ students, cfg, finances, onRollover }) {
   // ── Stat card component ──
   const SC = ({ l, val, I, color, sub, money }) => (
     <div style={{
-      background: 'white', borderRadius: 12, padding: '18px 20px',
-      boxShadow: T.shadow, flex: 1,
+      background: 'white', borderRadius: 12, padding: '16px 18px',
+      boxShadow: T.shadow, flex: 1, minWidth: 140,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 7 }}>{l}</div>
-          <div style={{ fontSize: money ? 20 : 28, fontWeight: 900, color: T.text }}>{val}</div>
-          {sub && <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>{sub}</div>}
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>{l}</div>
+          <div style={{ fontSize: money ? 18 : 24, fontWeight: 900, color: T.text }}>{val}</div>
+          {sub && <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>{sub}</div>}
         </div>
         <div style={{
-          width: 44, height: 44, background: color + '1a', borderRadius: 11,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 40, height: 40, background: color + '1a', borderRadius: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
-          <I size={20} color={color} />
+          <I size={18} color={color} />
         </div>
       </div>
     </div>
@@ -90,7 +90,7 @@ export function Dashboard({ students, cfg, finances, onRollover }) {
   return (
     <div>
       {/* Page header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h1 style={{ fontSize: 21, fontWeight: 800, color: T.text, margin: '0 0 3px' }}>Dashboard</h1>
           <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>
@@ -98,12 +98,12 @@ export function Dashboard({ students, cfg, finances, onRollover }) {
           </p>
         </div>
         {onRollover && (
-          <Btn v="outline" onClick={onRollover}>🔄 Semester Rollover</Btn>
+          <Btn v="outline" sm onClick={onRollover}>🔄 Rollover</Btn>
         )}
       </div>
 
       {/* Student count stats */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
         <SC l="Active Students" val={total}   I={Users}        color={T.sky}    sub={archived ? `+ ${archived} archived` : 'All enrolled'} />
         <SC l="Fully Paid"      val={paid}    I={CheckCircle}  color={T.green}  sub="Current semester" />
         <SC l="Partial"         val={partial} I={Zap}          color={T.orange} sub="Instalments ongoing" />
@@ -111,15 +111,15 @@ export function Dashboard({ students, cfg, finances, onRollover }) {
       </div>
 
       {/* Revenue & Profit stats */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
-        <SC l="Collected (Revenue)" val={fmtMoney(totalCollected)}   I={DollarSign}  color={T.green}  sub="Tuition received" money />
+      <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
+        <SC l="Collected Revenue"   val={fmtMoney(totalRevenue)}     I={DollarSign}  color={T.green}  sub="Tuition & Packages" money />
         <SC l="Total Expenses"      val={fmtMoney(totalExp + totalSal)} I={TrendingUp}  color={T.orange} sub="Bills & Payroll" money />
         <SC l="Net Profit"          val={fmtMoney(profit)}           I={CheckCircle} color={profit >= 0 ? T.sky : T.red} sub="Overall balance" money />
         <SC l="Outstanding"         val={fmtMoney(totalOutstanding)} I={AlertCircle} color={T.muted}  sub="Unpaid tuition" money />
       </div>
 
       {/* Level breakdown + recent students */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 18 }}>
         {/* Level chart */}
         <div style={{ background: 'white', borderRadius: 12, boxShadow: T.shadow, padding: '16px 20px' }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 7 }}>

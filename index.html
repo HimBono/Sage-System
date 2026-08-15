@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>School Administration System</title>
     <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         padding: 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #F8FAFC;
+        overflow-x: hidden;
       }
       /* Hide spin-button arrows on number inputs globally */
       input::-webkit-outer-spin-button,
@@ -17,6 +24,62 @@
       }
       input[type=number] {
         -moz-appearance: textfield;
+      }
+
+      @keyframes slideInLeft {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0); }
+      }
+
+      /* ── MOBILE RESPONSIVENESS (< 768px) ── */
+      @media (max-width: 768px) {
+        .desktop-sidebar {
+          display: none !important;
+        }
+        .mobile-hamburger-btn {
+          display: flex !important;
+        }
+        .mobile-bottom-nav {
+          display: flex !important;
+        }
+        .topbar-user-info {
+          display: none !important;
+        }
+        .login-left-panel {
+          display: none !important;
+        }
+        .mobile-only-header {
+          display: block !important;
+        }
+        .login-right-panel {
+          width: 100% !important;
+          padding: 28px 16px !important;
+        }
+        .main-content-container {
+          padding: 14px 12px 76px !important;
+        }
+
+        /* Responsive Grids */
+        div[style*="gridTemplateColumns: 1.1fr 1fr"],
+        div[style*="gridTemplateColumns: 1fr 1fr"] {
+          grid-template-columns: 1fr !important;
+        }
+
+        /* Stat cards wrap nicely on mobile */
+        div[style*="display: flex"][style*="gap: 12px"],
+        div[style*="display: flex"][style*="gap: 14px"],
+        div[style*="display: flex"][style*="gap: 16px"] {
+          flex-wrap: wrap !important;
+        }
+
+        /* Tables scroll horizontally */
+        table {
+          display: block;
+          width: 100%;
+          overflow-x: auto;
+          white-space: nowrap;
+          -webkit-overflow-scrolling: touch;
+        }
       }
     </style>
   </head>
