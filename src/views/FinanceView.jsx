@@ -76,9 +76,9 @@ export function FinanceView({ students = [], finances, setFinances }) {
     );
   }, [studentIncomes, externalIncomes]);
 
-  const expenses = finances.expenses || [];
-  const teachers = finances.teachers || [];
-  const reminders = finances.reminders || [];
+  const expenses = finances?.expenses || [];
+  const teachers = finances?.teachers || [];
+  const reminders = finances?.reminders || [];
 
   const totalIncome   = unifiedIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -121,7 +121,7 @@ export function FinanceView({ students = [], finances, setFinances }) {
     if (window.confirm('Delete this record permanently?')) {
       setFinances(prev => ({
         ...prev,
-        [type]: (prev[type] || []).filter(item => item.id !== id)
+        [type]: ((prev && prev[type]) || []).filter(item => item.id !== id)
       }));
     }
   };
@@ -154,7 +154,7 @@ export function FinanceView({ students = [], finances, setFinances }) {
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
-        <SC l="Total Income" val={fmtMoney(totalIncome)} I={ArrowUpRight} color={T.green} sub={`${incomes.length} revenue entries`} />
+        <SC l="Total Income" val={fmtMoney(totalIncome)} I={ArrowUpRight} color={T.green} sub={`${unifiedIncomes.length} revenue entries`} />
         <SC l="Total Expenses" val={fmtMoney(totalExpenses)} I={ArrowDownRight} color={T.orange} sub={`${expenses.length} expense entries`} />
         <SC l="Monthly Payroll" val={fmtMoney(totalSalaries)} I={Users} color={T.purple} sub={`${teachers.length} active teachers`} />
         <SC
@@ -169,7 +169,7 @@ export function FinanceView({ students = [], finances, setFinances }) {
 
       {/* Tabs */}
       <div style={{ borderBottom: `1px solid ${T.border}`, display: 'flex', marginBottom: 16, background: 'white', borderRadius: '12px 12px 0 0', padding: '0 12px' }}>
-        <TB t="incomes" l="Income & Collections" I={ArrowUpRight} badge={incomes.length} />
+        <TB t="incomes" l="Income & Collections" I={ArrowUpRight} badge={unifiedIncomes.length} />
         <TB t="expenses" l="Expenses" I={Wallet} badge={expenses.length} />
         <TB t="teachers" l="Teacher Payroll" I={Users} badge={teachers.length} />
         <TB t="reminders" l="Reminders" I={Bell} badge={reminders.length} />
