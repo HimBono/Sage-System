@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { UserCheck, ShoppingBag, CreditCard, ChevronDown, ChevronUp, Check, AlertCircle } from 'lucide-react';
+import { UserCheck, ShoppingBag, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
 import { T, LEVELS, STATUSES, PMETHODS } from '../../constants/index.js';
-import { Inp, Sel, Txta, Btn, Av, Mdl, NumInp } from '../ui/BaseUI.jsx';
+import { Inp, Sel, Txta, Btn, Av, Mdl } from '../ui/BaseUI.jsx';
 import { genId, genRec, today, fmtMoney } from '../../utils/formatters.js';
 import { suggestFeeAmt } from '../../utils/paymentHelpers.js';
 
@@ -14,11 +14,11 @@ const BLANK = {
   address: '', notes: '', semFees: [],
   paymentPlan: 'monthly', // 'monthly' (6 months) or 'full'
   initialPackage: {
-    admission: { enabled: true, amount: 100, label: 'Admission Fee' },
-    books:     { enabled: true, amount: 150, label: 'Books & Materials' },
-    uniform:   { enabled: true, amount: 100, label: 'Uniform & Clothes' },
-    custom:    { enabled: false, amount: 50, label: 'Supplies / ID Kit' },
-    paidNow:   true,
+    admission: { enabled: true, amount: '100', label: 'Admission Fee' },
+    books:     { enabled: true, amount: '150', label: 'Books & Materials' },
+    uniform:   { enabled: true, amount: '100', label: 'Uniform & Clothes' },
+    custom:    { enabled: false, amount: '50', label: 'Supplies / ID Kit' },
+    paidNow:   false,
     method:    'Cash',
     date:      today(),
   },
@@ -31,38 +31,52 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
   const [nameWarn, setNameWarn] = useState(false);
   const [icWarn, setIcWarn]     = useState('');
 
+  // Form state
   const [f, setF] = useState(() => {
     if (student) {
+      const curSF = (student.semFees || []).find(
+        (sf) => sf.sem === cfg.currentSemester && sf.year === cfg.currentYear
+      );
+      const semDue = curSF?.totalDue || suggestFeeAmt(student.level, cfg.fees, student.discount) || 1500;
       return {
         ...student,
         notes: student.notes || '',
-        paymentPlan: student.paymentPlan || 'monthly',
+        paymentPlan: curSF?.plan || student.paymentPlan || 'monthly',
+        monthlyRateInput: String(Math.round((semDue / 6) * 100) / 100),
+        semesterDueInput: String(semDue),
+        payTuitionToday: false,
+        tuitionPayAmountInput: String(Math.round((semDue / 6) * 100) / 100),
         initialPackage: student.initialPackage || {
-          admission: { enabled: false, amount: 100, label: 'Admission Fee' },
-          books:     { enabled: false, amount: 150, label: 'Books & Materials' },
-          uniform:   { enabled: false, amount: 100, label: 'Uniform & Clothes' },
-          custom:    { enabled: false, amount: 0, label: 'Custom Supply' },
+          admission: { enabled: false, amount: '100', label: 'Admission Fee' },
+          books:     { enabled: false, amount: '150', label: 'Books & Materials' },
+          uniform:   { enabled: false, amount: '100', label: 'Uniform & Clothes' },
+          custom:    { enabled: false, amount: '0', label: 'Custom Supply' },
           paidNow:   false,
           method:    'Cash',
           date:      today(),
         },
       };
     }
+
     const defaultLevel = LEVELS[0] || 'Kg 1';
     const standardSemFee = suggestFeeAmt(defaultLevel, cfg.fees, 'None') || 1500;
+    const standardMonthly = Math.round((standardSemFee / 6) * 100) / 100;
+
     return {
       ...BLANK,
       level: defaultLevel,
       semester: cfg.currentSemester,
       year: cfg.currentYear,
-      customTuitionFee: standardSemFee,
-      collectFirstMonthNow: true,
+      monthlyRateInput: String(standardMonthly),
+      semesterDueInput: String(standardSemFee),
+      payTuitionToday: false, // Payment is completely optional upon registration
+      tuitionPayAmountInput: String(standardMonthly),
       initialPackage: {
-        admission: { enabled: true, amount: 100, label: 'Admission Fee' },
-        books:     { enabled: true, amount: 150, label: 'Books & Learning Materials' },
-        uniform:   { enabled: true, amount: 100, label: 'School Uniform & Clothes' },
-        custom:    { enabled: false, amount: 50, label: 'Extra Activity / Supplies' },
-        paidNow:   true,
+        admission: { enabled: true, amount: '100', label: 'Admission Fee' },
+        books:     { enabled: true, amount: '150', label: 'Books & Learning Materials' },
+        uniform:   { enabled: true, amount: '100', label: 'School Uniform & Clothes' },
+        custom:    { enabled: false, amount: '50', label: 'Extra Activity / Supplies' },
+        paidNow:   false, // Optional
         method:    'Cash',
         date:      today(),
       },
@@ -72,7 +86,40 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
   const u = (k, v) => setF((prev) => ({ ...prev, [k]: v }));
   const g = (k)   => f[k] ?? '';
 
-  // Package helpers
+  // Fee adjustments
+  const handleMonthlyChange = (valStr) => {
+    u('monthlyRateInput', valStr);
+    const num = parseFloat(valStr);
+    if (!isNaN(num) && num > 0) {
+      const semTotal = num * 6;
+      u('semesterDueInput', String(semTotal));
+      if (f.paymentPlan === 'monthly') {
+        u('tuitionPayAmountInput', String(num));
+      } else {
+        u('tuitionPayAmountInput', String(semTotal));
+      }
+    }
+  };
+
+  const handleSemesterChange = (valStr) => {
+    u('semesterDueInput', valStr);
+    const num = parseFloat(valStr);
+    if (!isNaN(num) && num > 0) {
+      const monthly = Math.round((num / 6) * 100) / 100;
+      u('monthlyRateInput', String(monthly));
+      if (f.paymentPlan === 'monthly') {
+        u('tuitionPayAmountInput', String(monthly));
+      } else {
+        u('tuitionPayAmountInput', String(num));
+      }
+    }
+  };
+
+  const selectPresetRate = (rate) => {
+    handleMonthlyChange(String(rate));
+  };
+
+  // Starter package helpers
   const uPkg = (itemKey, field, val) => {
     setF((prev) => ({
       ...prev,
@@ -104,7 +151,7 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
     r.readAsDataURL(file);
   };
 
-  // Fees calculations
+  // Bundle calculations
   const pkg = f.initialPackage || {};
   const bundleTotal =
     (pkg.admission?.enabled ? Number(pkg.admission.amount) || 0 : 0) +
@@ -112,13 +159,11 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
     (pkg.uniform?.enabled ? Number(pkg.uniform.amount) || 0 : 0) +
     (pkg.custom?.enabled ? Number(pkg.custom.amount) || 0 : 0);
 
-  const suggestedTuition = suggestFeeAmt(f.level, cfg.fees, f.discount) || 1500;
-  const semesterDue = Number(f.customTuitionFee ?? suggestedTuition);
-  const monthlyRate = Math.round((semesterDue / 6) * 100) / 100;
-
-  // First month or full semester amount collected today
-  const firstMonthTuition = f.paymentPlan === 'monthly' ? monthlyRate : semesterDue;
-  const totalDueToday = (pkg.paidNow ? bundleTotal : 0) + (f.collectFirstMonthNow ? firstMonthTuition : 0);
+  const parsedSemesterDue = parseFloat(f.semesterDueInput) || 1500;
+  const parsedMonthlyRate = parseFloat(f.monthlyRateInput) || (parsedSemesterDue / 6);
+  const upfrontTuition = f.payTuitionToday ? (parseFloat(f.tuitionPayAmountInput) || 0) : 0;
+  const upfrontBundle  = pkg.paidNow ? bundleTotal : 0;
+  const totalDueToday  = upfrontTuition + upfrontBundle;
 
   const handleSave = () => {
     if (!f.name || !f.name.trim()) {
@@ -145,15 +190,15 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
       const paymentDate = f.initialPackage?.date || today();
       const paymentMethod = f.initialPackage?.method || 'Cash';
 
-      // 1. Initial 1st month / tuition payment if selected
-      if (f.collectFirstMonthNow && firstMonthTuition > 0) {
+      // 1. Initial tuition payment if parent paid upfront
+      if (f.payTuitionToday && upfrontTuition > 0) {
         const tuitionRecNo = genRec(yrN);
         const inst = {
           id: genId('INS'),
-          amount: firstMonthTuition,
+          amount: upfrontTuition,
           date: paymentDate,
           method: paymentMethod,
-          note: f.paymentPlan === 'monthly' ? 'Month 1 Tuition Fee' : 'Full Semester Tuition',
+          note: f.paymentPlan === 'monthly' ? `Month 1 Tuition Fee` : `Full Semester Tuition`,
           receiptNo: tuitionRecNo,
         };
         installments.push(inst);
@@ -163,7 +208,7 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
           date: paymentDate,
           category: 'Tuition Fee',
           description: `Tuition: ${f.name} (${f.level} - ${inst.note})`,
-          amount: firstMonthTuition,
+          amount: upfrontTuition,
           studentId,
           studentName: f.name,
           receiptNo: tuitionRecNo,
@@ -171,18 +216,19 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
         });
       }
 
+      // Record the semester fee structure (whether paid now or unpaid dues)
       updatedSemFees.push({
         id: genId('SF'),
         sem: semN,
         year: yrN,
         plan: f.paymentPlan || 'monthly',
-        totalDue: semesterDue,
+        totalDue: parsedSemesterDue,
         installments,
       });
 
       // 2. Starter bundle payment if marked paid
       let bundleRecNo = null;
-      if (f.initialPackage?.paidNow && bundleTotal > 0) {
+      if (pkg.paidNow && bundleTotal > 0) {
         bundleRecNo = genRec(yrN);
         const items = [];
         if (pkg.admission?.enabled) items.push(`Admission (RM ${pkg.admission.amount})`);
@@ -223,7 +269,7 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
         
         <div style={{ display: 'grid', gridTemplateColumns: isEdit ? '1fr' : '1.1fr 1fr', gap: 20, alignItems: 'start' }}>
           
-          {/* ── LEFT COLUMN: ESSENTIAL STUDENT INFORMATION ── */}
+          {/* ── LEFT COLUMN: STUDENT INFORMATION ── */}
           <div style={{ background: 'white', borderRadius: 12, padding: 18, border: `1px solid ${T.border}`, boxShadow: T.shadow }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
               👤 Student Profile
@@ -251,7 +297,8 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                 onChange={(e) => {
                   const newLvl = e.target.value;
                   u('level', newLvl);
-                  u('customTuitionFee', suggestFeeAmt(newLvl, cfg.fees, f.discount));
+                  const suggested = suggestFeeAmt(newLvl, cfg.fees, f.discount) || 1500;
+                  handleSemesterChange(String(suggested));
                 }}
               >
                 {LEVELS.map((l) => (
@@ -274,7 +321,8 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
               <Sel label="Sibling Discount" optional value={g('discount')} onChange={(e) => {
                 const disc = e.target.value;
                 u('discount', disc);
-                u('customTuitionFee', suggestFeeAmt(f.level, cfg.fees, disc));
+                const suggested = suggestFeeAmt(f.level, cfg.fees, disc) || 1500;
+                handleSemesterChange(String(suggested));
               }}>
                 <option value="None">None</option>
                 <option value="2nd Sibling (15%)">2nd Sibling (15% OFF)</option>
@@ -347,41 +395,75 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
             </div>
           </div>
 
-          {/* ── RIGHT COLUMN: FEES, STARTER BUNDLE & SETTLEMENT ── */}
+          {/* ── RIGHT COLUMN: FEE STRUCTURE & OPTIONAL UPFRONT PAYMENT ── */}
           {!isEdit && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               
-              {/* 1. Academic Fee Section */}
+              {/* 1. Academic Fee Structure Selection */}
               <div style={{ background: 'white', borderRadius: 12, padding: 18, border: `1px solid ${T.border}`, boxShadow: T.shadow }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: T.text, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <CreditCard size={16} color={T.sky} /> Academic Tuition Fee
+                    <CreditCard size={16} color={T.sky} /> Academic Tuition Structure
                   </div>
                   <span style={{ fontSize: 11, color: T.muted, background: '#F1F5F9', padding: '2px 8px', borderRadius: 6, fontWeight: 600 }}>
                     Standard: RM 250 – 300 / mo
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                  <NumInp
-                    label="Monthly Rate"
-                    prefix="RM"
-                    value={monthlyRate}
-                    step={10}
-                    onChange={(e) => {
-                      const newMo = Number(e.target.value);
-                      u('customTuitionFee', newMo * 6);
-                    }}
-                    quickSteps={[250, 275, 300]}
-                  />
+                {/* Quick Chips for Standard Monthly Rate */}
+                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                  {[250, 260, 270, 280, 300].map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => selectPresetRate(rate)}
+                      style={{
+                        flex: 1, padding: '5px 0', borderRadius: 6,
+                        border: f.monthlyRateInput === String(rate) ? `2px solid ${T.sky}` : `1px solid ${T.border}`,
+                        background: f.monthlyRateInput === String(rate) ? '#E0F2FE' : '#F8FAFC',
+                        color: f.monthlyRateInput === String(rate) ? T.sky : T.text,
+                        fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                      }}
+                    >
+                      RM {rate}
+                    </button>
+                  ))}
+                </div>
 
-                  <NumInp
-                    label="Semester Total (6 Mos)"
-                    prefix="RM"
-                    value={semesterDue}
-                    step={50}
-                    onChange={(e) => u('customTuitionFee', Number(e.target.value))}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>
+                      Monthly Rate
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
+                      <span style={{ padding: '0 10px', fontSize: 13, fontWeight: 700, color: T.muted, background: '#F8FAFC', borderRight: `1px solid ${T.border}`, height: 38, display: 'flex', alignItems: 'center' }}>RM</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={f.monthlyRateInput}
+                        onChange={(e) => handleMonthlyChange(e.target.value)}
+                        placeholder="250"
+                        style={{ flex: 1, padding: '8px 12px', border: 'none', outline: 'none', fontSize: 14, color: T.text, width: '100%' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>
+                      Semester Total (6 Mos)
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden' }}>
+                      <span style={{ padding: '0 10px', fontSize: 13, fontWeight: 700, color: T.muted, background: '#F8FAFC', borderRight: `1px solid ${T.border}`, height: 38, display: 'flex', alignItems: 'center' }}>RM</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={f.semesterDueInput}
+                        onChange={(e) => handleSemesterChange(e.target.value)}
+                        placeholder="1500"
+                        style={{ flex: 1, padding: '8px 12px', border: 'none', outline: 'none', fontSize: 14, color: T.text, width: '100%' }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Plan Toggle */}
@@ -397,7 +479,7 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                       boxShadow: f.paymentPlan === 'monthly' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                     }}
                   >
-                    🗓 Monthly (RM {monthlyRate}/mo)
+                    🗓 Monthly Schedule ({fmtMoney(parsedMonthlyRate)}/mo)
                   </button>
                   <button
                     type="button"
@@ -410,12 +492,12 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                       boxShadow: f.paymentPlan === 'full' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                     }}
                   >
-                    💰 Full Sem (RM {semesterDue})
+                    💰 Full Semester Lump Sum ({fmtMoney(parsedSemesterDue)})
                   </button>
                 </div>
               </div>
 
-              {/* 2. Starter Bundle (Clear & Prominent Prices) */}
+              {/* 2. Starter Bundle (Itemized, Clean Inputs) */}
               <div style={{ background: 'white', borderRadius: 12, padding: 18, border: `1px solid ${T.border}`, boxShadow: T.shadow }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: T.text, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -428,12 +510,12 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {/* Admission */}
-                  <label style={{
+                  <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '8px 12px', borderRadius: 8, border: `1px solid ${pkg.admission?.enabled ? '#BAE6FD' : T.border}`,
-                    background: pkg.admission?.enabled ? '#F0F9FF' : 'white', cursor: 'pointer',
+                    background: pkg.admission?.enabled ? '#F0F9FF' : 'white',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flex: 1 }}>
                       <input
                         type="checkbox"
                         checked={!!pkg.admission?.enabled}
@@ -441,26 +523,28 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                         style={{ width: 16, height: 16 }}
                       />
                       <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Admission & Reg Fee</span>
-                    </div>
+                    </label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span style={{ fontSize: 12, fontWeight: 700, color: T.muted }}>RM</span>
                       <input
-                        type="number"
-                        value={pkg.admission?.amount ?? 100}
+                        type="text"
+                        inputMode="decimal"
+                        value={pkg.admission?.amount ?? ''}
                         disabled={!pkg.admission?.enabled}
-                        onChange={(e) => uPkg('admission', 'amount', Number(e.target.value))}
-                        style={{ width: 60, padding: '3px 6px', borderRadius: 5, border: `1px solid ${T.border}`, fontWeight: 800, fontSize: 13, textAlign: 'right' }}
+                        onChange={(e) => uPkg('admission', 'amount', e.target.value)}
+                        placeholder="100"
+                        style={{ width: 64, padding: '4px 6px', borderRadius: 5, border: `1px solid ${T.border}`, fontWeight: 800, fontSize: 13, textAlign: 'right', background: 'white' }}
                       />
                     </div>
-                  </label>
+                  </div>
 
                   {/* Books */}
-                  <label style={{
+                  <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '8px 12px', borderRadius: 8, border: `1px solid ${pkg.books?.enabled ? '#BAE6FD' : T.border}`,
-                    background: pkg.books?.enabled ? '#F0F9FF' : 'white', cursor: 'pointer',
+                    background: pkg.books?.enabled ? '#F0F9FF' : 'white',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flex: 1 }}>
                       <input
                         type="checkbox"
                         checked={!!pkg.books?.enabled}
@@ -468,26 +552,28 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                         style={{ width: 16, height: 16 }}
                       />
                       <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Books & Learning Materials</span>
-                    </div>
+                    </label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span style={{ fontSize: 12, fontWeight: 700, color: T.muted }}>RM</span>
                       <input
-                        type="number"
-                        value={pkg.books?.amount ?? 150}
+                        type="text"
+                        inputMode="decimal"
+                        value={pkg.books?.amount ?? ''}
                         disabled={!pkg.books?.enabled}
-                        onChange={(e) => uPkg('books', 'amount', Number(e.target.value))}
-                        style={{ width: 60, padding: '3px 6px', borderRadius: 5, border: `1px solid ${T.border}`, fontWeight: 800, fontSize: 13, textAlign: 'right' }}
+                        onChange={(e) => uPkg('books', 'amount', e.target.value)}
+                        placeholder="150"
+                        style={{ width: 64, padding: '4px 6px', borderRadius: 5, border: `1px solid ${T.border}`, fontWeight: 800, fontSize: 13, textAlign: 'right', background: 'white' }}
                       />
                     </div>
-                  </label>
+                  </div>
 
                   {/* Uniform */}
-                  <label style={{
+                  <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '8px 12px', borderRadius: 8, border: `1px solid ${pkg.uniform?.enabled ? '#BAE6FD' : T.border}`,
-                    background: pkg.uniform?.enabled ? '#F0F9FF' : 'white', cursor: 'pointer',
+                    background: pkg.uniform?.enabled ? '#F0F9FF' : 'white',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flex: 1 }}>
                       <input
                         type="checkbox"
                         checked={!!pkg.uniform?.enabled}
@@ -495,29 +581,34 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                         style={{ width: 16, height: 16 }}
                       />
                       <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Uniform & School Clothes</span>
-                    </div>
+                    </label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span style={{ fontSize: 12, fontWeight: 700, color: T.muted }}>RM</span>
                       <input
-                        type="number"
-                        value={pkg.uniform?.amount ?? 100}
+                        type="text"
+                        inputMode="decimal"
+                        value={pkg.uniform?.amount ?? ''}
                         disabled={!pkg.uniform?.enabled}
-                        onChange={(e) => uPkg('uniform', 'amount', Number(e.target.value))}
-                        style={{ width: 60, padding: '3px 6px', borderRadius: 5, border: `1px solid ${T.border}`, fontWeight: 800, fontSize: 13, textAlign: 'right' }}
+                        onChange={(e) => uPkg('uniform', 'amount', e.target.value)}
+                        placeholder="100"
+                        style={{ width: 64, padding: '4px 6px', borderRadius: 5, border: `1px solid ${T.border}`, fontWeight: 800, fontSize: 13, textAlign: 'right', background: 'white' }}
                       />
                     </div>
-                  </label>
+                  </div>
                 </div>
               </div>
 
-              {/* 3. Payment Settlement Card */}
+              {/* 3. Upfront Payment Collection (100% Optional) */}
               <div style={{
                 background: totalDueToday > 0 ? '#ECFDF5' : '#F8FAFC',
                 border: `1px solid ${totalDueToday > 0 ? '#A7F3D0' : T.border}`,
                 borderRadius: 12, padding: 16,
               }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: totalDueToday > 0 ? '#065F46' : T.text, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                  💳 Upfront Payment Today
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: totalDueToday > 0 ? '#065F46' : T.text, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                    💳 Upfront Payment (Optional)
+                  </div>
+                  <span style={{ fontSize: 11, color: T.muted }}>Pay now or leave as unpaid dues</span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
@@ -535,7 +626,7 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                           style={{ width: 16, height: 16 }}
                         />
                         <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
-                          Pay Starter Bundle Today
+                          Collect Starter Bundle Today
                         </span>
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 800, color: pkg.paidNow ? T.green : T.muted }}>
@@ -547,21 +638,21 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                   <label style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     background: 'white', padding: '8px 12px', borderRadius: 8,
-                    border: `1px solid ${f.collectFirstMonthNow ? '#A7F3D0' : T.border}`, cursor: 'pointer',
+                    border: `1px solid ${f.payTuitionToday ? '#A7F3D0' : T.border}`, cursor: 'pointer',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <input
                         type="checkbox"
-                        checked={!!f.collectFirstMonthNow}
-                        onChange={(e) => u('collectFirstMonthNow', e.target.checked)}
+                        checked={!!f.payTuitionToday}
+                        onChange={(e) => u('payTuitionToday', e.target.checked)}
                         style={{ width: 16, height: 16 }}
                       />
                       <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
-                        {f.paymentPlan === 'monthly' ? 'Pay Month 1 Tuition Today' : 'Pay Full Semester Today'}
+                        {f.paymentPlan === 'monthly' ? `Collect Month 1 Tuition Today` : `Collect Full Semester Tuition Today`}
                       </span>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: f.collectFirstMonthNow ? T.green : T.muted }}>
-                      {fmtMoney(firstMonthTuition)}
+                    <span style={{ fontSize: 13, fontWeight: 800, color: f.payTuitionToday ? T.green : T.muted }}>
+                      {f.paymentPlan === 'monthly' ? fmtMoney(parsedMonthlyRate) : fmtMoney(parsedSemesterDue)}
                     </span>
                   </label>
                 </div>
@@ -569,7 +660,7 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: `1px solid ${totalDueToday > 0 ? '#A7F3D0' : T.border}` }}>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: totalDueToday > 0 ? '#047857' : T.muted }}>
-                      {totalDueToday > 0 ? 'Total Due & Collected Now' : 'No Upfront Payment (Dues Tracked)'}
+                      {totalDueToday > 0 ? 'Total Due & Collected Now' : 'No Upfront Payment (Dues Tracked on Student Profile)'}
                     </div>
                   </div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: totalDueToday > 0 ? '#065F46' : T.text }}>
@@ -604,7 +695,7 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
         <div style={{ display: 'flex', gap: 8 }}>
           <Btn v="outline" onClick={onClose}>Cancel</Btn>
           <Btn v="green" onClick={handleSave}>
-            <UserCheck size={14} />{isEdit ? 'Save Changes' : '✓ Complete Registration & Issue Receipt'}
+            <UserCheck size={14} />{isEdit ? 'Save Changes' : '✓ Complete Registration'}
           </Btn>
         </div>
       </div>

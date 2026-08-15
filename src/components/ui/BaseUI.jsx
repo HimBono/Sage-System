@@ -78,12 +78,12 @@ export function NumInp({
           )}
           <input
             type="number"
-            value={value === 0 ? 0 : (value ?? '')}
+            value={value ?? ''}
             onChange={onChange}
             min={min}
             max={max}
             step={step}
-            placeholder={placeholder}
+            placeholder={placeholder || '0.00'}
             {...p}
             style={{
               flex: 1, padding: '8px 12px', border: 'none',
