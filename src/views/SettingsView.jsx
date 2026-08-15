@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check, CheckCircle, Plus, Trash2 } from 'lucide-react';
 import { T } from '../constants/index.js';
-import { iBase, Inp, Sel, Txta, Btn } from '../components/ui/BaseUI.jsx';
+import { iBase, Inp, Sel, Txta, Btn, NumInp } from '../components/ui/BaseUI.jsx';
 
 // ── SETTINGS VIEW ─────────────────────────────────────────────────────────────
 export function SettingsView({ cfg, setCfg, onResetData }) {
@@ -74,7 +74,15 @@ export function SettingsView({ cfg, setCfg, onResetData }) {
             <option value={1}>Semester 1</option>
             <option value={2}>Semester 2</option>
           </Sel>
-          <Inp label="Current Year" type="number" value={f.currentYear} onChange={(e) => u('currentYear', Number(e.target.value))} />
+          <NumInp
+            label="Current Year"
+            value={f.currentYear}
+            onChange={(e) => u('currentYear', Number(e.target.value))}
+            min={2020}
+            max={2035}
+            step={1}
+            quickSteps={[2025, 2026, 2027]}
+          />
         </div>
         <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
           Semester Date Ranges
@@ -117,7 +125,13 @@ export function SettingsView({ cfg, setCfg, onResetData }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 14px' }}>
           <Inp label="Form Title" value={f.regForm.title} onChange={(e) => uRf('title', e.target.value)} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 10px' }}>
-            <Inp label="Reg Fee (RM)" type="number" value={f.regForm.regFee} onChange={(e) => uRf('regFee', Number(e.target.value))} />
+            <NumInp
+              label="Reg Fee"
+              prefix="RM"
+              step={20}
+              value={f.regForm.regFee}
+              onChange={(e) => uRf('regFee', Number(e.target.value))}
+            />
             <Inp label="Fee Label" value={f.regForm.regFeeLabel} onChange={(e) => uRf('regFeeLabel', e.target.value)} />
           </div>
           <Txta col="1/-1" label="Introduction Paragraph" rows={2} value={f.regForm.intro} onChange={(e) => uRf('intro', e.target.value)} />

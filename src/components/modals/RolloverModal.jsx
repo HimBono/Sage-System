@@ -55,7 +55,7 @@ export function RolloverModal({ students, cfg, onConfirm, onClose }) {
             borderRadius: 8, padding: '10px 14px', marginBottom: 12,
             fontSize: 13, color: '#5B21B6',
           }}>
-            📚 Level advance: e.g. Primary 6 → Secondary 1, Secondary 3 → Secondary 4. Upper 6 stays at Upper 6.
+            📚 Level advance: e.g. Kg 1 → Kg 2 → Level 1 → Level 2 → Level 3 → Level 4.
           </div>
         )}
 

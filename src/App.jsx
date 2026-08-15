@@ -78,6 +78,8 @@ export default function App() {
               setStudents={setStudents}
               cfg={cfg}
               setCfg={setCfg}
+              finances={finances}
+              setFinances={setFinances}
               onRollover={() => setRollover(true)}
             />
           )}

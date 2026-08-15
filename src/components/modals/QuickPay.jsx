@@ -5,7 +5,7 @@ import { fmtMoney, genId, genRec, today } from '../../utils/formatters.js';
 import {
   semFeeOf, semTotals, payStatus, suggestFeeAmt,
 } from '../../utils/paymentHelpers.js';
-import { Mdl, Inp, Sel, SBadge, Btn } from '../ui/BaseUI.jsx';
+import { Mdl, Inp, Sel, SBadge, Btn, NumInp } from '../ui/BaseUI.jsx';
 
 // ── QUICK PAY MODAL ───────────────────────────────────────────────────────────
 export function QuickPay({ student, cfg, onSave, onClose }) {
@@ -109,27 +109,50 @@ export function QuickPay({ student, cfg, onSave, onClose }) {
             <option value={1}>Semester 1</option>
             <option value={2}>Semester 2</option>
           </Sel>
-          <Inp label="Year" type="number" value={pf.year} onChange={(e) => u('year', e.target.value)} />
+          <NumInp
+            label="Year"
+            value={pf.year}
+            onChange={(e) => u('year', e.target.value)}
+            min={2020}
+            max={2035}
+            step={1}
+          />
           {isNew && (
-            <Inp
-              col="1/-1" label="Total Fee Due (RM)" type="number"
-              value={pf.totalDue} onChange={(e) => u('totalDue', e.target.value)}
+            <NumInp
+              col="1/-1"
+              label="Total Fee Due"
+              prefix="RM"
+              step={50}
+              value={pf.totalDue}
+              onChange={(e) => u('totalDue', e.target.value)}
               placeholder={suggestFeeAmt(student.level, cfg.fees, student.discount) || '0.00'}
             />
           )}
-          <Inp
-            label="Amount Paying (RM)" type="number"
-            value={pf.amount} onChange={(e) => u('amount', e.target.value)}
+          <NumInp
+            col="1/-1"
+            label="Amount Paying"
+            required
+            prefix="RM"
+            step={50}
+            value={pf.amount}
+            onChange={(e) => u('amount', e.target.value)}
             placeholder="0.00"
-            style={{ borderColor: pf.amount ? T.green : T.border }}
+            quickSteps={
+              suggested > 0
+                ? [suggested / 2, suggested].filter(Boolean)
+                : [100, 200, 500]
+            }
           />
           <Sel label="Payment Method" value={pf.method} onChange={(e) => u('method', e.target.value)}>
             {PMETHODS.map((m) => <option key={m}>{m}</option>)}
           </Sel>
           <Inp label="Date Paid" type="date" value={pf.date} onChange={(e) => u('date', e.target.value)} />
           <Inp
-            col="1/-1" label="Note (optional)"
-            value={pf.note} onChange={(e) => u('note', e.target.value)}
+            col="1/-1"
+            label="Note"
+            optional
+            value={pf.note}
+            onChange={(e) => u('note', e.target.value)}
             placeholder="e.g. 1st instalment, full payment…"
           />
         </div>

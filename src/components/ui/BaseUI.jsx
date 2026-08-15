@@ -11,37 +11,164 @@ export const iBase = {
 };
 
 // ── FIELD WRAPPER ─────────────────────────────────────────────────────────────
-export const F = ({ label, col, children }) => (
+export const F = ({ label, required, optional, col, children }) => (
   <div style={{ marginBottom: 12, gridColumn: col }}>
     {label && (
-      <label style={{
-        display: 'block', fontSize: 11, fontWeight: 700, color: T.muted,
-        marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.06em',
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        marginBottom: 4,
       }}>
-        {label}
-      </label>
+        <label style={{
+          display: 'block', fontSize: 11, fontWeight: 700, color: T.muted,
+          textTransform: 'uppercase', letterSpacing: '.06em',
+        }}>
+          {label} {required && <span style={{ color: T.red, fontWeight: 800 }}>*</span>}
+        </label>
+        {optional && (
+          <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 500, letterSpacing: '.02em' }}>
+            (optional)
+          </span>
+        )}
+      </div>
     )}
     {children}
   </div>
 );
 
 // ── INPUT ─────────────────────────────────────────────────────────────────────
-export const Inp = ({ label, col, style: s, ...p }) => (
-  <F label={label} col={col}>
+export const Inp = ({ label, required, optional, col, style: s, ...p }) => (
+  <F label={label} required={required} optional={optional} col={col}>
     <input {...p} style={{ ...iBase, ...(s || {}) }} />
   </F>
 );
 
+// ── NUMBER PICKER / AMOUNT INPUT ──────────────────────────────────────────────
+export const NumInp = ({
+  label, required, optional, col, value, onChange, min = 0, max, step = 1,
+  prefix, suffix, quickSteps = [], placeholder, style: s, ...p
+}) => {
+  const numVal = value === '' || value === undefined || value === null ? '' : Number(value);
+
+  const handleStep = (delta) => {
+    const current = numVal === '' ? 0 : numVal;
+    let next = current + delta;
+    if (min !== undefined && next < min) next = min;
+    if (max !== undefined && next > max) next = max;
+    onChange({ target: { value: next } });
+  };
+
+  return (
+    <F label={label} required={required} optional={optional} col={col}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          border: `1px solid ${T.border}`, borderRadius: 8,
+          background: 'white', overflow: 'hidden',
+          transition: 'border-color 0.15s',
+          ...(s || {}),
+        }}>
+          {prefix && (
+            <span style={{
+              padding: '0 10px', fontSize: 13, fontWeight: 700,
+              color: T.muted, background: '#F8FAFC', borderRight: `1px solid ${T.border}`,
+              height: 38, display: 'flex', alignItems: 'center', userSelect: 'none',
+            }}>
+              {prefix}
+            </span>
+          )}
+          <input
+            type="number"
+            value={value ?? ''}
+            onChange={onChange}
+            min={min}
+            max={max}
+            step={step}
+            placeholder={placeholder}
+            {...p}
+            style={{
+              flex: 1, padding: '8px 12px', border: 'none',
+              outline: 'none', fontSize: 14, color: T.text,
+              background: 'transparent', width: '100%', minWidth: 0,
+            }}
+          />
+          {suffix && (
+            <span style={{
+              padding: '0 10px', fontSize: 12, color: T.muted,
+              background: '#F8FAFC', borderLeft: `1px solid ${T.border}`,
+              height: 38, display: 'flex', alignItems: 'center', userSelect: 'none',
+            }}>
+              {suffix}
+            </span>
+          )}
+          <div style={{ display: 'flex', borderLeft: `1px solid ${T.border}`, height: 38 }}>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => handleStep(-step)}
+              style={{
+                width: 32, border: 'none', background: '#F8FAFC',
+                borderRight: `1px solid ${T.border}`, cursor: 'pointer',
+                fontSize: 16, fontWeight: 700, color: T.muted, display: 'flex',
+                alignItems: 'center', justifyContent: 'center', userSelect: 'none',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#F1F5F9')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+            >
+              −
+            </button>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => handleStep(step)}
+              style={{
+                width: 32, border: 'none', background: '#F8FAFC',
+                cursor: 'pointer', fontSize: 16, fontWeight: 700,
+                color: T.muted, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', userSelect: 'none',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#F1F5F9')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+            >
+              +
+            </button>
+          </div>
+        </div>
+        {quickSteps && quickSteps.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
+            {quickSteps.map((qs) => (
+              <button
+                key={qs}
+                type="button"
+                tabIndex={-1}
+                onClick={() => onChange({ target: { value: qs } })}
+                style={{
+                  padding: '2px 8px', fontSize: 11, fontWeight: 600,
+                  borderRadius: 5, border: `1px solid ${T.border}`,
+                  background: Number(value) === qs ? '#E0F2FE' : '#F8FAFC',
+                  color: Number(value) === qs ? T.sky : T.muted,
+                  cursor: 'pointer',
+                }}
+              >
+                {prefix ? `${prefix} ` : ''}{qs}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </F>
+  );
+};
+
 // ── SELECT ────────────────────────────────────────────────────────────────────
-export const Sel = ({ label, col, children, style: s, ...p }) => (
-  <F label={label} col={col}>
+export const Sel = ({ label, required, optional, col, children, style: s, ...p }) => (
+  <F label={label} required={required} optional={optional} col={col}>
     <select {...p} style={{ ...iBase, ...(s || {}) }}>{children}</select>
   </F>
 );
 
 // ── TEXTAREA ──────────────────────────────────────────────────────────────────
-export const Txta = ({ label, col, rows, ...p }) => (
-  <F label={label} col={col}>
+export const Txta = ({ label, required, optional, col, rows, ...p }) => (
+  <F label={label} required={required} optional={optional} col={col}>
     <textarea
       {...p}
       rows={rows || 3}

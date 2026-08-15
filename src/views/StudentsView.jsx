@@ -17,7 +17,7 @@ import { ReceiptDoc } from '../components/receipts/ReceiptDoc.jsx';
 import { Mdl } from '../components/ui/BaseUI.jsx';
 
 // ── STUDENTS VIEW ─────────────────────────────────────────────────────────────
-export function StudentsView({ students, setStudents, cfg, setCfg, onRollover }) {
+export function StudentsView({ students, setStudents, cfg, setCfg, finances, setFinances, onRollover }) {
   const [q, setQ] = useState('');
   const [fl, setFl] = useState('');
   const [fs, setFs] = useState('');
@@ -57,18 +57,27 @@ export function StudentsView({ students, setStudents, cfg, setCfg, onRollover })
 
   const ms = modal?.sid ? students.find((x) => x.id === modal.sid) : null;
   
-  const save = (s) => {
+  const save = (s, generatedIncomes = []) => {
     setStudents((prev) => s.id && prev.find((x) => x.id === s.id) ? prev.map((x) => x.id === s.id ? s : x) : [...prev, s]);
+    if (generatedIncomes && generatedIncomes.length > 0 && setFinances) {
+      setFinances((prev) => ({
+        ...prev,
+        incomes: [...generatedIncomes, ...(prev.incomes || [])],
+      }));
+    }
     setModal(null);
   };
+
   const upd = (s) => {
     setStudents((prev) => prev.map((x) => x.id === s.id ? s : x));
     setModal((m) => ({ ...m, type: 'view', sid: s.id }));
   };
+
   const updQP = (s) => {
     setStudents((prev) => prev.map((x) => x.id === s.id ? s : x));
     setModal(null);
   };
+
   const del = (id) => {
     if (window.confirm('Delete this student permanently?')) setStudents((p) => p.filter((x) => x.id !== id));
   };

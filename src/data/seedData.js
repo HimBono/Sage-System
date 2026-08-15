@@ -11,11 +11,12 @@ export const INIT_CFG = {
     { sem: 2, year: 2026, start: '2026-07-01', end: '2026-12-12' },
   ],
   fees: [
-    { id: 1, label: 'Primary 1–3',    amount: 1200 },
-    { id: 2, label: 'Primary 4–6',    amount: 1400 },
-    { id: 3, label: 'Secondary 1–3',  amount: 1600 },
-    { id: 4, label: 'Secondary 4–5',  amount: 1800 },
-    { id: 5, label: 'Sixth Form',     amount: 2200 },
+    { id: 1, label: 'Kg 1',    amount: 1000 },
+    { id: 2, label: 'Kg 2',    amount: 1000 },
+    { id: 3, label: 'Level 1', amount: 1200 },
+    { id: 4, label: 'Level 2', amount: 1300 },
+    { id: 5, label: 'Level 3', amount: 1400 },
+    { id: 6, label: 'Level 4', amount: 1500 },
   ],
   regForm: {
     title:        'APPLICATION FOR ADMISSION',
@@ -30,6 +31,7 @@ export const INIT_CFG = {
 export const INIT_STUDENTS = [];
 
 export const INIT_FINANCE = {
+  incomes: [],
   expenses: [],
   teachers: [],
   reminders: [],

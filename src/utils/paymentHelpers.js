@@ -26,16 +26,11 @@ export const payStatus = (student, cfg) => {
 };
 
 /** Suggest a fee amount based on the student's level and the fee schedule */
-export const suggestFeeAmt = (level, fees, discount = 'None') => {
-  const l = (level || '').toLowerCase();
-  const m = fees.find((f) => {
-    const fl = f.label.toLowerCase();
-    if ((l.includes('primary 1') || l.includes('primary 2') || l.includes('primary 3')) && fl.includes('primary 1')) return true;
-    if ((l.includes('primary 4') || l.includes('primary 5') || l.includes('primary 6')) && fl.includes('primary 4')) return true;
-    if ((l.includes('secondary 1') || l.includes('secondary 2') || l.includes('secondary 3')) && fl.includes('secondary 1')) return true;
-    if ((l.includes('secondary 4') || l.includes('secondary 5')) && fl.includes('secondary 4')) return true;
-    if (l.includes('6') && fl.includes('sixth')) return true;
-    return false;
+export const suggestFeeAmt = (level, fees = [], discount = 'None') => {
+  const l = (level || '').toLowerCase().trim();
+  const m = (fees || []).find((f) => {
+    const fl = (f.label || '').toLowerCase().trim();
+    return fl === l || l.includes(fl) || fl.includes(l);
   });
   let baseAmt = m?.amount || 0;
   if (discount === '2nd Sibling (15%)') {
@@ -56,6 +51,60 @@ export const nextLevel = (level) => {
   return i >= 0 && i < LEVELS.length - 1 ? LEVELS[i + 1] : level;
 };
 
+// ── 6-MONTH SEMESTER MONTHLY HELPERS ─────────────────────────────────────────
+
+const SEM1_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+const SEM2_MONTHS = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export const getSemesterMonths = (sem) => {
+  return Number(sem) === 1 ? SEM1_MONTHS : SEM2_MONTHS;
+};
+
+/**
+ * Calculates a 6-month breakdown for a semester fee with 'monthly' or 'full' plan
+ */
+export const calcMonthlySchedule = (semFee) => {
+  if (!semFee) return [];
+  const months = getSemesterMonths(semFee.sem);
+  const totalDue = Number(semFee.totalDue) || 0;
+  const monthlyDue = Math.round((totalDue / 6) * 100) / 100;
+  const totalPaid = (semFee.installments || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+
+  let remainingPaid = totalPaid;
+
+  return months.map((monthName, idx) => {
+    // For the last month, reconcile any rounding cents
+    const dueForThisMonth = idx === 5 ? Math.max(0, totalDue - monthlyDue * 5) : monthlyDue;
+    let paidForThisMonth = 0;
+
+    if (remainingPaid >= dueForThisMonth) {
+      paidForThisMonth = dueForThisMonth;
+      remainingPaid -= dueForThisMonth;
+    } else if (remainingPaid > 0) {
+      paidForThisMonth = remainingPaid;
+      remainingPaid = 0;
+    }
+
+    const balance = Math.max(0, dueForThisMonth - paidForThisMonth);
+    let status = 'unpaid';
+    if (paidForThisMonth >= dueForThisMonth && dueForThisMonth > 0) {
+      status = 'paid';
+    } else if (paidForThisMonth > 0) {
+      status = 'partial';
+    }
+
+    return {
+      monthIndex: idx + 1,
+      monthName,
+      label: `Month ${idx + 1} (${monthName})`,
+      due: dueForThisMonth,
+      paid: paidForThisMonth,
+      balance,
+      status,
+    };
+  });
+};
+
 /** Generate a pre-filled WhatsApp message for a fee reminder */
 export const waMsg = (s, cfg) => {
   const sf = semFeeOf(s, cfg);
@@ -73,3 +122,4 @@ export const waMsg = (s, cfg) => {
     `Thank you.\n_${cfg.schoolName} Administration_`
   );
 };
+

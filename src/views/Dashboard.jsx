@@ -28,9 +28,12 @@ export function Dashboard({ students, cfg, finances, onRollover }) {
   const totalCollected  = active.reduce((sum, s) => sum + semTotals(semFeeOf(s, cfg)).paid,    0);
   const totalOutstanding = active.reduce((sum, s) => sum + semTotals(semFeeOf(s, cfg)).balance, 0);
 
-  const totalExp = (finances?.expenses || []).reduce((sum, e) => sum + e.amount, 0);
-  const totalSal = (finances?.teachers || []).reduce((sum, t) => sum + t.salary, 0);
-  const profit = totalCollected - totalExp - totalSal;
+  const totalFinanceIncomes = (finances?.incomes || []).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  const totalRevenue = totalFinanceIncomes > 0 ? totalFinanceIncomes : totalCollected;
+
+  const totalExp = (finances?.expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const totalSal = (finances?.teachers || []).reduce((sum, t) => sum + (Number(t.salary) || 0), 0);
+  const profit = totalRevenue - totalExp - totalSal;
 
   const levelBreakdown = LEVELS
     .map((l) => ({ l, count: active.filter((s) => s.level === l).length }))

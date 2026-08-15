@@ -19,9 +19,12 @@ export const T = {
 export const PAL = [T.sky, T.purple, T.green, T.amber, T.red];
 
 export const LEVELS = [
-  'Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5', 'Primary 6',
-  'Secondary 1', 'Secondary 2', 'Secondary 3', 'Secondary 4', 'Secondary 5',
-  'Lower 6', 'Upper 6',
+  'Kg 1',
+  'Kg 2',
+  'Level 1',
+  'Level 2',
+  'Level 3',
+  'Level 4',
 ];
 
 export const PMETHODS = ['Cash', 'Bank Transfer', 'Online Banking', 'Cheque', 'Other'];
