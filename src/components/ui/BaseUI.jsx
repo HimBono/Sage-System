@@ -43,34 +43,34 @@ export const Inp = ({ label, required, optional, col, style: s, ...p }) => (
 );
 
 // ── NUMBER PICKER / AMOUNT INPUT ──────────────────────────────────────────────
-export const NumInp = ({
-  label, required, optional, col, value, onChange, min = 0, max, step = 1,
-  prefix, suffix, quickSteps = [], placeholder, style: s, ...p
-}) => {
-  const numVal = value === '' || value === undefined || value === null ? '' : Number(value);
-
-  const handleStep = (delta) => {
-    const current = numVal === '' ? 0 : numVal;
-    let next = current + delta;
-    if (min !== undefined && next < min) next = min;
-    if (max !== undefined && next > max) next = max;
-    onChange({ target: { value: next } });
-  };
-
+export function NumInp({
+  label, value, onChange, placeholder, min, max, step = 1,
+  prefix, suffix, required, optional, col, quickSteps, ...p
+}) {
   return (
-    <F label={label} required={required} optional={optional} col={col}>
+    <div style={{ marginBottom: 12, gridColumn: col || 'auto' }}>
+      {label && (
+        <label style={{
+          display: 'block', fontSize: 11, fontWeight: 700,
+          color: T.muted, textTransform: 'uppercase', letterSpacing: '.06em',
+          marginBottom: 4,
+        }}>
+          {label}
+          {required && <span style={{ color: T.red, marginLeft: 3 }}>*</span>}
+          {optional && <span style={{ color: T.muted, fontWeight: 400, textTransform: 'none', marginLeft: 4 }}>(optional)</span>}
+        </label>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{
           display: 'flex', alignItems: 'center',
           border: `1px solid ${T.border}`, borderRadius: 8,
           background: 'white', overflow: 'hidden',
-          transition: 'border-color 0.15s',
-          ...(s || {}),
+          transition: 'border-color .15s',
         }}>
           {prefix && (
             <span style={{
-              padding: '0 10px', fontSize: 13, fontWeight: 700,
-              color: T.muted, background: '#F8FAFC', borderRight: `1px solid ${T.border}`,
+              padding: '0 10px', fontSize: 13, fontWeight: 700, color: T.muted,
+              background: '#F8FAFC', borderRight: `1px solid ${T.border}`,
               height: 38, display: 'flex', alignItems: 'center', userSelect: 'none',
             }}>
               {prefix}
@@ -78,7 +78,7 @@ export const NumInp = ({
           )}
           <input
             type="number"
-            value={value ?? ''}
+            value={value === 0 ? 0 : (value ?? '')}
             onChange={onChange}
             min={min}
             max={max}
@@ -100,38 +100,6 @@ export const NumInp = ({
               {suffix}
             </span>
           )}
-          <div style={{ display: 'flex', borderLeft: `1px solid ${T.border}`, height: 38 }}>
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => handleStep(-step)}
-              style={{
-                width: 32, border: 'none', background: '#F8FAFC',
-                borderRight: `1px solid ${T.border}`, cursor: 'pointer',
-                fontSize: 16, fontWeight: 700, color: T.muted, display: 'flex',
-                alignItems: 'center', justifyContent: 'center', userSelect: 'none',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#F1F5F9')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = '#F8FAFC')}
-            >
-              −
-            </button>
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => handleStep(step)}
-              style={{
-                width: 32, border: 'none', background: '#F8FAFC',
-                cursor: 'pointer', fontSize: 16, fontWeight: 700,
-                color: T.muted, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', userSelect: 'none',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#F1F5F9')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = '#F8FAFC')}
-            >
-              +
-            </button>
-          </div>
         </div>
         {quickSteps && quickSteps.length > 0 && (
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
@@ -142,11 +110,9 @@ export const NumInp = ({
                 tabIndex={-1}
                 onClick={() => onChange({ target: { value: qs } })}
                 style={{
-                  padding: '2px 8px', fontSize: 11, fontWeight: 600,
-                  borderRadius: 5, border: `1px solid ${T.border}`,
-                  background: Number(value) === qs ? '#E0F2FE' : '#F8FAFC',
-                  color: Number(value) === qs ? T.sky : T.muted,
-                  cursor: 'pointer',
+                  padding: '2px 8px', borderRadius: 4,
+                  border: `1px solid ${T.border}`, background: '#F8FAFC',
+                  fontSize: 11, color: T.sky, fontWeight: 600, cursor: 'pointer',
                 }}
               >
                 {prefix ? `${prefix} ` : ''}{qs}
@@ -155,9 +121,9 @@ export const NumInp = ({
           </div>
         )}
       </div>
-    </F>
+    </div>
   );
-};
+}
 
 // ── SELECT ────────────────────────────────────────────────────────────────────
 export const Sel = ({ label, required, optional, col, children, style: s, ...p }) => (

@@ -83,7 +83,7 @@ export default function App() {
               onRollover={() => setRollover(true)}
             />
           )}
-          {view === 'receipts' && <ReceiptsView students={students} cfg={cfg} />}
+          {view === 'receipts' && <ReceiptsView students={students} cfg={cfg} finances={finances} />}
           {view === 'settings' && <SettingsView cfg={cfg} setCfg={setCfg} onResetData={handleResetData} />}
         </main>
       </div>

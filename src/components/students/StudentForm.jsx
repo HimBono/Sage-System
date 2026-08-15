@@ -181,8 +181,9 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
       });
 
       // 2. Starter bundle payment if marked paid
+      let bundleRecNo = null;
       if (f.initialPackage?.paidNow && bundleTotal > 0) {
-        const bundleRecNo = genRec(yrN);
+        bundleRecNo = genRec(yrN);
         const items = [];
         if (pkg.admission?.enabled) items.push(`Admission (RM ${pkg.admission.amount})`);
         if (pkg.books?.enabled) items.push(`Books (RM ${pkg.books.amount})`);
@@ -200,6 +201,10 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
           receiptNo: bundleRecNo,
           method: paymentMethod,
         });
+      }
+
+      if (f.initialPackage) {
+        f.initialPackage.receiptNo = bundleRecNo;
       }
     }
 
@@ -507,29 +512,79 @@ export function StudentFormModal({ student, onSave, onClose, cfg, allStudents })
 
               {/* 3. Payment Settlement Card */}
               <div style={{
-                background: '#ECFDF5', border: `1px solid #A7F3D0`,
+                background: totalDueToday > 0 ? '#ECFDF5' : '#F8FAFC',
+                border: `1px solid ${totalDueToday > 0 ? '#A7F3D0' : T.border}`,
                 borderRadius: 12, padding: 16,
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#065F46', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                      Total Collection Today
+                <div style={{ fontSize: 13, fontWeight: 800, color: totalDueToday > 0 ? '#065F46' : T.text, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  💳 Upfront Payment Today
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                  {bundleTotal > 0 && (
+                    <label style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      background: 'white', padding: '8px 12px', borderRadius: 8,
+                      border: `1px solid ${pkg.paidNow ? '#A7F3D0' : T.border}`, cursor: 'pointer',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input
+                          type="checkbox"
+                          checked={!!pkg.paidNow}
+                          onChange={(e) => uPkgMeta('paidNow', e.target.checked)}
+                          style={{ width: 16, height: 16 }}
+                        />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+                          Pay Starter Bundle Today
+                        </span>
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: pkg.paidNow ? T.green : T.muted }}>
+                        {fmtMoney(bundleTotal)}
+                      </span>
+                    </label>
+                  )}
+
+                  <label style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: 'white', padding: '8px 12px', borderRadius: 8,
+                    border: `1px solid ${f.collectFirstMonthNow ? '#A7F3D0' : T.border}`, cursor: 'pointer',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="checkbox"
+                        checked={!!f.collectFirstMonthNow}
+                        onChange={(e) => u('collectFirstMonthNow', e.target.checked)}
+                        style={{ width: 16, height: 16 }}
+                      />
+                      <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+                        {f.paymentPlan === 'monthly' ? 'Pay Month 1 Tuition Today' : 'Pay Full Semester Today'}
+                      </span>
                     </div>
-                    <div style={{ fontSize: 11, color: '#047857' }}>
-                      Bundle ({fmtMoney(bundleTotal)}) + {f.paymentPlan === 'monthly' ? `Month 1 (${fmtMoney(monthlyRate)})` : `Full Sem (${fmtMoney(semesterDue)})`}
+                    <span style={{ fontSize: 13, fontWeight: 800, color: f.collectFirstMonthNow ? T.green : T.muted }}>
+                      {fmtMoney(firstMonthTuition)}
+                    </span>
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: `1px solid ${totalDueToday > 0 ? '#A7F3D0' : T.border}` }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: totalDueToday > 0 ? '#047857' : T.muted }}>
+                      {totalDueToday > 0 ? 'Total Due & Collected Now' : 'No Upfront Payment (Dues Tracked)'}
                     </div>
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: '#065F46' }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: totalDueToday > 0 ? '#065F46' : T.text }}>
                     {fmtMoney(totalDueToday)}
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid #A7F3D0' }}>
-                  <Sel label="Payment Method" value={pkg.method} onChange={(e) => uPkgMeta('method', e.target.value)}>
-                    {PMETHODS.map((m) => <option key={m}>{m}</option>)}
-                  </Sel>
-                  <Inp label="Date Paid" type="date" value={pkg.date} onChange={(e) => uPkgMeta('date', e.target.value)} />
-                </div>
+                {totalDueToday > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid #A7F3D0' }}>
+                    <Sel label="Payment Method" value={pkg.method} onChange={(e) => uPkgMeta('method', e.target.value)}>
+                      {PMETHODS.map((m) => <option key={m}>{m}</option>)}
+                    </Sel>
+                    <Inp label="Date Paid" type="date" value={pkg.date} onChange={(e) => uPkgMeta('date', e.target.value)} />
+                  </div>
+                )}
               </div>
 
             </div>
