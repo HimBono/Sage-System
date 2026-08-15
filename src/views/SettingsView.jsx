@@ -4,7 +4,7 @@ import { T } from '../constants/index.js';
 import { iBase, Inp, Sel, Txta, Btn } from '../components/ui/BaseUI.jsx';
 
 // ── SETTINGS VIEW ─────────────────────────────────────────────────────────────
-export function SettingsView({ cfg, setCfg }) {
+export function SettingsView({ cfg, setCfg, onResetData }) {
   const [f, setF] = useState({
     ...cfg,
     fees: [...cfg.fees],
@@ -125,6 +125,17 @@ export function SettingsView({ cfg, setCfg }) {
           <Txta col="1/-1" label="Declaration Text" rows={3} value={f.regForm.declaration} onChange={(e) => uRf('declaration', e.target.value)} />
         </div>
       </Sec>
+
+      {onResetData && (
+        <Sec title="Data & Storage Management">
+          <p style={{ fontSize: 13, color: T.muted, margin: '0 0 14px' }}>
+            Your data is safely stored in local browser storage. If you want to wipe all records and restore original demo data, click below.
+          </p>
+          <Btn v="danger" onClick={onResetData}>
+            <Trash2 size={14} /> Reset All Data to Defaults
+          </Btn>
+        </Sec>
+      )}
     </div>
   );
 }
