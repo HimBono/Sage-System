@@ -71,7 +71,7 @@ export default function App() {
         <TopBar cfg={cfg} />
         <main style={{ flex: 1, overflowY: 'auto', padding: 22 }}>
           {view === 'dashboard' && <Dashboard students={students} cfg={cfg} finances={finances} onRollover={() => setRollover(true)} />}
-          {view === 'finance' && <FinanceView finances={finances} setFinances={setFinances} />}
+          {view === 'finance' && <FinanceView students={students} finances={finances} setFinances={setFinances} />}
           {view === 'students' && (
             <StudentsView
               students={students}

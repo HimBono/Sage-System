@@ -28,8 +28,33 @@ export function Dashboard({ students, cfg, finances, onRollover }) {
   const totalCollected  = active.reduce((sum, s) => sum + semTotals(semFeeOf(s, cfg)).paid,    0);
   const totalOutstanding = active.reduce((sum, s) => sum + semTotals(semFeeOf(s, cfg)).balance, 0);
 
-  const totalFinanceIncomes = (finances?.incomes || []).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-  const totalRevenue = totalFinanceIncomes > 0 ? totalFinanceIncomes : totalCollected;
+  // 1. Tuition collections from all active students
+  const tuitionCollected = active.reduce((sum, s) => {
+    return sum + (s.semFees || []).reduce((sSum, sf) => {
+      return sSum + (sf.installments || []).reduce((iSum, inst) => iSum + (Number(inst.amount) || 0), 0);
+    }, 0);
+  }, 0);
+
+  // 2. Starter bundle payments from active students
+  const starterPackagesCollected = active.reduce((sum, s) => {
+    const pkg = s.initialPackage;
+    if (pkg && pkg.paidNow) {
+      const bTotal =
+        (pkg.admission?.enabled ? Number(pkg.admission.amount) || 0 : 0) +
+        (pkg.books?.enabled ? Number(pkg.books.amount) || 0 : 0) +
+        (pkg.uniform?.enabled ? Number(pkg.uniform.amount) || 0 : 0) +
+        (pkg.custom?.enabled ? Number(pkg.custom.amount) || 0 : 0);
+      return sum + bTotal;
+    }
+    return sum;
+  }, 0);
+
+  // 3. Other/manual external revenues recorded in finances (non-student)
+  const externalIncomes = (finances?.incomes || [])
+    .filter((i) => !i.studentId)
+    .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+
+  const totalRevenue = tuitionCollected + starterPackagesCollected + externalIncomes;
 
   const totalExp = (finances?.expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const totalSal = (finances?.teachers || []).reduce((sum, t) => sum + (Number(t.salary) || 0), 0);

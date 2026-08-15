@@ -7,24 +7,86 @@ import { T, PMETHODS } from '../constants/index.js';
 import { fmtMoney, fmtDate, genId, today } from '../utils/formatters.js';
 import { Btn, Th, Td, Inp, Sel, Mdl, Txta, NumInp, Pill } from '../components/ui/BaseUI.jsx';
 
-export function FinanceView({ finances, setFinances }) {
+export function FinanceView({ students = [], finances, setFinances }) {
   const [tab, setTab] = useState('incomes');
   const [incomeCat, setIncomeCat] = useState('all');
   const [incomeQuery, setIncomeQuery] = useState('');
   const [modal, setModal] = useState(null);
 
-  const incomes = finances.incomes || [];
+  // 1. Gather all student-based revenues (tuition + starter packages)
+  const studentIncomes = useMemo(() => {
+    const rows = [];
+    (students || []).forEach((s) => {
+      // Tuition installments
+      (s.semFees || []).forEach((sf) => {
+        (sf.installments || []).forEach((inst) => {
+          rows.push({
+            id: `TUITION_${inst.id}`,
+            date: inst.date,
+            receiptNo: inst.receiptNo,
+            category: 'Tuition Fee',
+            description: `Tuition: ${s.name} (${s.level} - Sem ${sf.sem})`,
+            studentName: s.name,
+            studentId: s.id,
+            method: inst.method || 'Cash',
+            amount: Number(inst.amount) || 0,
+            isStudentLinked: true,
+          });
+        });
+      });
+
+      // Starter package
+      const pkg = s.initialPackage;
+      if (pkg && (pkg.paidNow || pkg.receiptNo)) {
+        const pkgTotal =
+          (pkg.admission?.enabled ? Number(pkg.admission.amount) || 0 : 0) +
+          (pkg.books?.enabled ? Number(pkg.books.amount) || 0 : 0) +
+          (pkg.uniform?.enabled ? Number(pkg.uniform.amount) || 0 : 0) +
+          (pkg.custom?.enabled ? Number(pkg.custom.amount) || 0 : 0);
+
+        if (pkgTotal > 0) {
+          const recNo = pkg.receiptNo || `REC-${s.year || 2026}-${s.id.slice(-4)}`;
+          rows.push({
+            id: `PKG_${s.id}`,
+            date: pkg.date || s.enrolledOn,
+            receiptNo: recNo,
+            category: 'Registration & Materials',
+            description: `Starter Package for ${s.name} (Admission, Books & Uniforms)`,
+            studentName: s.name,
+            studentId: s.id,
+            method: pkg.method || 'Cash',
+            amount: pkgTotal,
+            isStudentLinked: true,
+          });
+        }
+      }
+    });
+    return rows;
+  }, [students]);
+
+  // 2. Manual / External Incomes in finances (non-student)
+  const externalIncomes = (finances.incomes || [])
+    .filter((inc) => !inc.studentId)
+    .map((inc) => ({ ...inc, isStudentLinked: false }));
+
+  // Unified income list
+  const unifiedIncomes = useMemo(() => {
+    return [...studentIncomes, ...externalIncomes].sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    );
+  }, [studentIncomes, externalIncomes]);
+
   const expenses = finances.expenses || [];
   const teachers = finances.teachers || [];
   const reminders = finances.reminders || [];
 
-  const totalIncome   = incomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  const totalIncome   = unifiedIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const totalSalaries = teachers.reduce((sum, t) => sum + (Number(t.salary) || 0), 0);
   const netBalance    = totalIncome - totalExpenses - totalSalaries;
 
   const filteredIncomes = useMemo(() => {
-    return incomes.filter((inc) => {
+    return unifiedIncomes.filter((inc) => {
       const q = incomeQuery.toLowerCase();
       const matchQuery = !q ||
         (inc.description || '').toLowerCase().includes(q) ||
@@ -34,7 +96,7 @@ export function FinanceView({ finances, setFinances }) {
       const matchCat = incomeCat === 'all' || inc.category === incomeCat;
       return matchQuery && matchCat;
     });
-  }, [incomes, incomeQuery, incomeCat]);
+  }, [unifiedIncomes, incomeQuery, incomeCat]);
 
   const TB = ({ t, l, I, badge }) => (
     <button
