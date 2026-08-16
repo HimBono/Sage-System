@@ -146,10 +146,53 @@ export function SettingsView({ cfg, setCfg, onResetData }) {
         </div>
       </Sec>
 
+      {/* Cloud Sync & Database Status */}
+      <Sec title="☁️ Cloud Database & Multi-Device Sync">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.text, display: 'flex', alignItems: 'center', gap: 8 }}>
+                Connection Status:
+                {cloudStatus === 'synced' && <span style={{ color: '#059669' }}>🟢 Connected & Active (Syncing all devices)</span>}
+                {cloudStatus === 'syncing' && <span style={{ color: '#0284C7' }}>🔄 Syncing with Cloud…</span>}
+                {cloudStatus === 'unconfigured' && <span style={{ color: '#D97706' }}>🟡 Local Mode (Connect Vercel KV / Upstash Redis)</span>}
+                {cloudStatus === 'error' && <span style={{ color: '#DC2626' }}>🔴 Sync Disconnected</span>}
+              </div>
+              <p style={{ fontSize: 13, color: T.muted, margin: '4px 0 0' }}>
+                {cloudStatus === 'synced'
+                  ? 'All changes made on this device automatically sync to your other laptops and mobile phones in real time.'
+                  : 'Currently storing data locally. Connect Vercel Storage (Upstash Redis) to sync across all your devices.'}
+              </p>
+            </div>
+            {onManualSync && (
+              <Btn sm v="sky" onClick={onManualSync}>
+                🔄 Sync Now
+              </Btn>
+            )}
+          </div>
+
+          {cloudStatus === 'unconfigured' && (
+            <div style={{
+              background: '#FFFBEB', border: '1px solid #FDE68A',
+              borderRadius: 8, padding: 14, marginTop: 6,
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#92400E', marginBottom: 6 }}>
+                💡 How to enable Multi-Device Sync in 2 steps (Free):
+              </div>
+              <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#78350F', lineHeight: 1.6 }}>
+                <li>Go to your project in the <strong>Vercel Dashboard</strong>.</li>
+                <li>Click the <strong>Storage</strong> tab → Click <strong>Create Database</strong> → Select <strong>KV / Upstash Redis</strong> (Free).</li>
+                <li>Redeploy your app or click <strong>Sync Now</strong>. Your data will now automatically sync across all your phones, laptops, and admins!</li>
+              </ol>
+            </div>
+          )}
+        </div>
+      </Sec>
+
       {onResetData && (
         <Sec title="Data & Storage Management">
           <p style={{ fontSize: 13, color: T.muted, margin: '0 0 14px' }}>
-            Your data is safely stored in local browser storage. If you want to wipe all records and restore original demo data, click below.
+            Wipe all records and restore original demo data if needed.
           </p>
           <Btn v="danger" onClick={onResetData}>
             <Trash2 size={14} /> Reset All Data to Defaults

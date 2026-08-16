@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { T } from './constants/index.js';
 import { INIT_STUDENTS, INIT_CFG, INIT_FINANCE } from './data/seedData.js';
 import { Sidebar, TopBar, MobileBottomNav } from './components/ui/Sidebar.jsx';
@@ -11,6 +11,7 @@ import { FinanceView } from './views/FinanceView.jsx';
 import { RolloverModal } from './components/modals/RolloverModal.jsx';
 import { nextLevel } from './utils/paymentHelpers.js';
 import { getStoredItem, setStoredItem } from './utils/storage.js';
+import { fetchCloudData, triggerCloudSave } from './utils/cloudSync.js';
 
 export default function App() {
   const [authed, setAuthed] = useState(() => {
@@ -22,18 +23,45 @@ export default function App() {
   const [cfg, setCfg] = useState(() => getStoredItem('sage_cfg', INIT_CFG));
   const [finances, setFinances] = useState(() => getStoredItem('sage_finances', INIT_FINANCE));
   const [rollover, setRollover] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState('checking'); // 'synced' | 'syncing' | 'unconfigured' | 'error' | 'checking'
+  
+  const isInitialMount = useRef(true);
 
+  // 1. On Mount: Fetch and Hydrate Cloud Data
+  useEffect(() => {
+    async function initSync() {
+      const res = await fetchCloudData();
+      if (res && res.success && res.data) {
+        // Cloud has existing data -> hydrate
+        if (res.data.students) setStudents(res.data.students);
+        if (res.data.cfg) setCfg(res.data.cfg);
+        if (res.data.finances) setFinances(res.data.finances);
+        setCloudStatus('synced');
+      } else if (res && res.configured === false) {
+        setCloudStatus('unconfigured');
+      } else if (res && res.success && !res.data) {
+        // Cloud is connected but empty -> seed it with current data
+        triggerCloudSave({ students, cfg, finances }, setCloudStatus);
+      } else {
+        setCloudStatus('unconfigured');
+      }
+    }
+    initSync();
+  }, []);
+
+  // 2. On State Changes: Sync to LocalStorage & Cloud
   useEffect(() => {
     setStoredItem('sage_students', students);
-  }, [students]);
-
-  useEffect(() => {
     setStoredItem('sage_cfg', cfg);
-  }, [cfg]);
-
-  useEffect(() => {
     setStoredItem('sage_finances', finances);
-  }, [finances]);
+
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    triggerCloudSave({ students, cfg, finances }, setCloudStatus);
+  }, [students, cfg, finances]);
 
   const handleLogin = (remember) => {
     setAuthed(true);
@@ -86,7 +114,7 @@ export default function App() {
         setMobileOpen={setMobileOpen}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: T.bg, minWidth: 0 }}>
-        <TopBar cfg={cfg} onOpenMobileMenu={() => setMobileOpen(true)} />
+        <TopBar cfg={cfg} onOpenMobileMenu={() => setMobileOpen(true)} cloudStatus={cloudStatus} />
         <main className="main-content-container" style={{ flex: 1, overflowY: 'auto', padding: '20px 22px 76px' }}>
           {view === 'dashboard' && <Dashboard students={students} cfg={cfg} finances={finances} onRollover={() => setRollover(true)} />}
           {view === 'finance' && <FinanceView students={students} finances={finances} setFinances={setFinances} />}
@@ -102,7 +130,15 @@ export default function App() {
             />
           )}
           {view === 'receipts' && <ReceiptsView students={students} cfg={cfg} finances={finances} />}
-          {view === 'settings' && <SettingsView cfg={cfg} setCfg={setCfg} onResetData={handleResetData} />}
+          {view === 'settings' && (
+            <SettingsView
+              cfg={cfg}
+              setCfg={setCfg}
+              onResetData={handleResetData}
+              cloudStatus={cloudStatus}
+              onManualSync={() => triggerCloudSave({ students, cfg, finances }, setCloudStatus)}
+            />
+          )}
         </main>
         <MobileBottomNav active={view} go={setView} />
       </div>

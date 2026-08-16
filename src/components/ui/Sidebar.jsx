@@ -125,8 +125,8 @@ export function Sidebar({ active, go, school, onOut, mobileOpen, setMobileOpen }
   );
 }
 
-// ── TOP BAR (WITH MOBILE HAMBURGER) ───────────────────────────────────────────
-export function TopBar({ cfg, onOpenMobileMenu }) {
+// ── TOP BAR (WITH MOBILE HAMBURGER & CLOUD STATUS) ────────────────────────────
+export function TopBar({ cfg, onOpenMobileMenu, cloudStatus }) {
   return (
     <div style={{
       padding: '10px 18px', background: 'white',
@@ -150,17 +150,41 @@ export function TopBar({ cfg, onOpenMobileMenu }) {
         </span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{
-          width: 30, height: 30, background: T.sky, borderRadius: 8,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'white', fontWeight: 800, fontSize: 12,
-        }}>
-          A
-        </div>
-        <div className="topbar-user-info">
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, lineHeight: 1.2 }}>Administrator</div>
-          <div style={{ fontSize: 10, color: T.muted }}>System Admin</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Cloud sync status badge */}
+        {cloudStatus === 'synced' && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }}></span> Cloud Synced
+          </span>
+        )}
+        {cloudStatus === 'syncing' && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#0284C7', background: '#F0F9FF', border: '1px solid #BAE6FD', padding: '3px 8px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0EA5E9' }}></span> Syncing…
+          </span>
+        )}
+        {cloudStatus === 'unconfigured' && (
+          <span title="Connect Upstash Redis in Vercel to sync across all devices" style={{ fontSize: 11, fontWeight: 700, color: '#B45309', background: '#FEF3C7', border: '1px solid #FDE68A', padding: '3px 8px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B' }}></span> Local Storage
+          </span>
+        )}
+        {cloudStatus === 'error' && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#B91C1C', background: '#FEE2E2', border: '1px solid #FCA5A5', padding: '3px 8px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }}></span> Sync Error
+          </span>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 30, height: 30, background: T.sky, borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white', fontWeight: 800, fontSize: 12,
+          }}>
+            A
+          </div>
+          <div className="topbar-user-info">
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, lineHeight: 1.2 }}>Administrator</div>
+            <div style={{ fontSize: 10, color: T.muted }}>System Admin</div>
+          </div>
         </div>
       </div>
     </div>
