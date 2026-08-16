@@ -4,13 +4,36 @@ import { T } from '../constants/index.js';
 import { iBase, Inp, Sel, Txta, Btn, NumInp } from '../components/ui/BaseUI.jsx';
 
 // ── SETTINGS VIEW ─────────────────────────────────────────────────────────────
-export function SettingsView({ cfg, setCfg, onResetData }) {
-  const [f, setF] = useState({
-    ...cfg,
-    fees: [...cfg.fees],
-    semDates: [...cfg.semDates],
-    regForm: { ...cfg.regForm },
-  });
+export function SettingsView({ cfg = {}, setCfg, onResetData, cloudStatus, onManualSync }) {
+  const [f, setF] = useState(() => ({
+    schoolName: cfg?.schoolName || 'SAGE School',
+    address: cfg?.address || '',
+    phone: cfg?.phone || '',
+    email: cfg?.email || '',
+    currentSemester: cfg?.currentSemester || 2,
+    currentYear: cfg?.currentYear || 2026,
+    fees: Array.isArray(cfg?.fees) && cfg.fees.length > 0 ? [...cfg.fees] : [
+      { id: 1, label: 'Kg 1', amount: 1500 },
+      { id: 2, label: 'Kg 2', amount: 1560 },
+      { id: 3, label: 'Level 1', amount: 1620 },
+      { id: 4, label: 'Level 2', amount: 1680 },
+      { id: 5, label: 'Level 3', amount: 1740 },
+      { id: 6, label: 'Level 4', amount: 1800 },
+    ],
+    semDates: Array.isArray(cfg?.semDates) && cfg.semDates.length > 0 ? [...cfg.semDates] : [
+      { sem: 1, start: '2026-01-05', end: '2026-06-26' },
+      { sem: 2, start: '2026-07-06', end: '2026-12-18' },
+    ],
+    regForm: {
+      title: 'STUDENT REGISTRATION FORM',
+      regFee: 50,
+      regFeeLabel: 'Registration Fee (One-off)',
+      intro: 'Please complete all sections in BLOCK LETTERS. Return the completed form with required documents.',
+      terms: '1. Fees must be paid on or before the due date.\n2. Fees paid are non-refundable.\n3. The school reserves the right to suspend students with outstanding arrears.\n4. Parents must notify the school of any changes in contact details.',
+      declaration: 'I hereby declare that the information provided is true and accurate. I agree to abide by the school rules and regulations.',
+      ...(cfg?.regForm || {}),
+    },
+  }));
   const [saved, setSaved] = useState(false);
 
   const u = (k, v) => setF((x) => ({ ...x, [k]: v }));
@@ -19,24 +42,25 @@ export function SettingsView({ cfg, setCfg, onResetData }) {
   const save = () => {
     setCfg(f);
     setSaved(true);
+    if (onManualSync) onManualSync();
     setTimeout(() => setSaved(false), 2500);
   };
   
   const updFee = (id, k, v) =>
-    setF((x) => ({ ...x, fees: x.fees.map((fe) => fe.id === id ? { ...fe, [k]: v } : fe) }));
+    setF((x) => ({ ...x, fees: (x.fees || []).map((fe) => fe.id === id ? { ...fe, [k]: v } : fe) }));
     
   const updSem = (i, k, v) =>
     setF((x) => {
-      const d = [...x.semDates];
+      const d = [...(x.semDates || [])];
       d[i] = { ...d[i], [k]: v };
       return { ...x, semDates: d };
     });
     
   const addFee = () =>
-    setF((x) => ({ ...x, fees: [...x.fees, { id: Date.now(), label: 'New Level', amount: 0 }] }));
+    setF((x) => ({ ...x, fees: [...(x.fees || []), { id: Date.now(), label: 'New Level', amount: 1500 }] }));
     
   const delFee = (id) =>
-    setF((x) => ({ ...x, fees: x.fees.filter((fe) => fe.id !== id) }));
+    setF((x) => ({ ...x, fees: (x.fees || []).filter((fe) => fe.id !== id) }));
 
   const Sec = ({ title, children }) => (
     <div style={{ background: 'white', borderRadius: 12, boxShadow: T.shadow, marginBottom: 16 }}>

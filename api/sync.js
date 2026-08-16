@@ -2,15 +2,22 @@ import { Redis } from '@upstash/redis';
 
 // Helper to initialize Redis from available environment variables
 function getRedis() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url =
+    process.env.KV_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
+
+  const token =
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
 
   if (url && token) {
     return new Redis({ url, token });
   }
 
   // If redis connection string exists
-  const redisUrl = process.env.KV_URL || process.env.REDIS_URL;
+  const redisUrl = process.env.KV_URL || process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
   if (redisUrl) {
     return Redis.fromEnv();
   }
@@ -46,7 +53,14 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const data = await redis.get(STORAGE_KEY);
+      let data = await redis.get(STORAGE_KEY);
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch {
+          // data is already raw or parsed
+        }
+      }
       return res.status(200).json({
         success: true,
         configured: true,
@@ -55,7 +69,15 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { students, cfg, finances } = req.body || {};
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+        } catch {
+          body = {};
+        }
+      }
+      const { students, cfg, finances } = body || {};
       const payload = {
         students,
         cfg,
